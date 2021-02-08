@@ -54,7 +54,7 @@ router.get("/:id", async (req, res, next) => {
     next(err);
   }
 });
-router.post("/:total", async (req, res, next) => {
+router.post("/total", async (req, res, next) => {
   try {
     const data = JSON.parse(await readFile("grades.json", "utf8"));
     const grade = data.grades.filter(
@@ -73,6 +73,46 @@ router.post("/:total", async (req, res, next) => {
     next(err);
   }
 });
+router.get("/:total/:subject/:type", async (req, res, next) => {
+  try {
+    const data = JSON.parse(await readFile("grades.json", "utf8"));
+    const grade = data.grades.filter(
+      (grade) =>
+        grade.subject === req.params.subject && grade.type === req.params.type
+    );
+
+    const total = grade.reduce((acc, cur) => {
+      return acc + cur.value;
+    }, 0);
+
+    // const somaMedias = grade.reduce((acc, cur) => acc + cur.value);
+
+    res.send({avarage: total / grade.length});
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/best", async (req, res, next) => {
+  try {
+    const data = JSON.parse(await readFile("grades.json", "utf8"));
+    const grades = data.grades.filter(
+      (grade) =>
+        grade.subject === req.body.subject && grade.type === req.body.type
+    );
+
+    if(!grades.length) {
+      throw new Error("Não foram encontrados registros para os parâmetros informados.")
+    }
+    
+    grades.sort((a, b) => a.value > b.value ? a.value < b.value ? 1 : -1 : 0);
+
+    
+
+    res.send(grades.slice(0, 3));
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.delete("/:id", async (req, res, next) => {
   try {
@@ -85,6 +125,11 @@ router.delete("/:id", async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+router.use((err, req, res, next) => {
+  console.log(err); 
+  res.status(400).send({ error: err.message });
 });
 
 export default router;
